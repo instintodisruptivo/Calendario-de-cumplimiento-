@@ -520,9 +520,14 @@
   </div>
 
   <div class="action-bar">
+    <button class="btn btn-primary" id="saveNowBtn">Guardar ahora</button>
+    <button class="btn btn-ghost" id="backupBtn">Descargar respaldo</button>
+    <button class="btn btn-ghost" id="restoreBtn">Restaurar respaldo</button>
+    <input type="file" id="restoreInput" accept="application/json" style="display:none;">
     <button class="btn btn-ghost" id="printBtn">Imprimir / Guardar PDF</button>
     <button class="btn btn-ghost" id="resetBtn">Nuevo mes en blanco</button>
   </div>
+  <p class="notice" style="text-align:right;">Recomendado: descarga tu respaldo una vez por semana, así nunca pierdes tu avance del mes aunque cambies de teléfono o se borre el navegador.</p>
 
   <footer class="brand">
     <b>Tu cuerpo refleja tus hábitos.</b><br>
@@ -837,6 +842,70 @@
       updateCalculations();
     }
   });
+
+  // ---------- MANUAL SAVE ----------
+  document.getElementById('saveNowBtn').addEventListener('click', ()=>{
+    const key = currentKey();
+    if(!key){
+      alert('Escribe tu nombre, mes y año antes de guardar.');
+      return;
+    }
+    try{
+      localStorage.setItem(key, JSON.stringify(collectState()));
+      saveText.textContent = 'Guardado';
+      alert('Tu información quedó guardada en este dispositivo.');
+    }catch(e){
+      alert('No se pudo guardar. Intenta descargar tu respaldo en su lugar.');
+    }
+  });
+
+  // ---------- BACKUP / RESTORE (safety net vs. iOS storage clearing) ----------
+  document.getElementById('backupBtn').addEventListener('click', ()=>{
+    const state = collectState();
+    const nombre = slug(state.nombre) || 'paciente';
+    const mes = slug(state.mes) || 'mes';
+    const anio = state.anio || 'anio';
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `respaldo-${nombre}-${mes}-${anio}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('restoreBtn').addEventListener('click', ()=>{
+    document.getElementById('restoreInput').click();
+  });
+  document.getElementById('restoreInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const state = JSON.parse(ev.target.result);
+        document.getElementById('nombre').value = state.nombre||'';
+        document.getElementById('mes').value = state.mes||'';
+        document.getElementById('anio').value = state.anio||'';
+        updateDayNumbers();
+        applyState(state);
+        updateCalculations();
+        scheduleSave();
+        alert('Respaldo restaurado correctamente.');
+      }catch(err){
+        alert('No se pudo leer ese archivo de respaldo.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // ask the browser not to evict this site's storage under pressure (best-effort, not guaranteed on iOS)
+  if(navigator.storage && navigator.storage.persist){
+    navigator.storage.persist().catch(()=>{});
+  }
 
   // init
   updateDayNumbers();
