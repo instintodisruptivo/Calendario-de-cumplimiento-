@@ -198,6 +198,28 @@
     padding:10px 8px 12px;
   }
   .day-col:last-child{border-right:none;}
+
+  .swipe-hint{display:none;}
+  @media screen and (max-width:700px){
+    .grid-days{
+      display:flex;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x mandatory;
+      border-top:1px solid var(--line);
+    }
+    .day-col{
+      flex:0 0 78%;
+      max-width:230px;
+      scroll-snap-align:start;
+      border-right:1px solid var(--line);
+    }
+    .swipe-hint{
+      display:flex;align-items:center;gap:6px;justify-content:center;
+      font-size:11px;font-weight:700;color:var(--ink-60);
+      padding:8px 0 0;letter-spacing:.3px;
+    }
+  }
   .day-name{
     font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
     text-align:center;color:var(--black);
@@ -564,6 +586,11 @@
       grid.appendChild(col);
     });
     card.appendChild(grid);
+
+    const hint = document.createElement('div');
+    hint.className = 'swipe-hint';
+    hint.innerHTML = '← Desliza para ver todos los días →';
+    card.appendChild(hint);
 
     const foot = document.createElement('div');
     foot.className = 'week-foot';
